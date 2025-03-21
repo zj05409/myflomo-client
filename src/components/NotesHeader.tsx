@@ -3,8 +3,9 @@ import SearchBar from './SearchBar';
 import SortMenu, { SortOption } from './SortMenu';
 
 interface NotesHeaderProps {
-    onSearch: (value: string) => void;
+    onSearch: (query: string) => void;
     onSort: (option: string) => void;
+    onToggleSidebar: () => void;
 }
 
 const SORT_OPTIONS: SortOption[] = [
@@ -14,7 +15,7 @@ const SORT_OPTIONS: SortOption[] = [
     { id: 'edit-asc', label: '编辑时间，从旧到新' },
 ];
 
-const NotesHeader: React.FC<NotesHeaderProps> = ({ onSearch, onSort }) => {
+const NotesHeader: React.FC<NotesHeaderProps> = ({ onSearch, onSort, onToggleSidebar }) => {
     const [searchValue, setSearchValue] = useState('');
     const [selectedSort, setSelectedSort] = useState('create-desc');
     const [showSortMenu, setShowSortMenu] = useState(false);
@@ -30,8 +31,18 @@ const NotesHeader: React.FC<NotesHeaderProps> = ({ onSearch, onSort }) => {
     };
 
     return (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+                <button
+                    onClick={onToggleSidebar}
+                    className="lg:hidden p-2 text-gray-500 hover:text-gray-700"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
                 <div className="relative">
                     <button
                         className="flex items-center text-gray-700 hover:text-gray-900"

@@ -28,6 +28,7 @@ function App() {
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOption, setSortOption] = useState('create-desc');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // 监听笔记变化并保存到localStorage
     useEffect(() => {
@@ -148,7 +149,7 @@ function App() {
     return (
         <div className="min-h-screen bg-gray-50">
             <header className="bg-white border-b border-gray-200">
-                <div className="container mx-auto px-4 py-4">
+                <div className="container mx-auto px-2 lg:px-4 max-w-[1600px] py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#3ab682] text-white font-bold text-lg">
@@ -159,29 +160,51 @@ function App() {
                                 <p className="text-xs text-gray-500">思想的数字花园</p>
                             </div>
                         </div>
-                        <DataSync onExport={handleExport} onImport={handleImport} />
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={handleExport}
+                                className="btn-secondary"
+                            >
+                                导出数据
+                            </button>
+                            <button
+                                onClick={() => document.getElementById('import-input')?.click()}
+                                className="btn-secondary"
+                            >
+                                导入数据
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <main className="container mx-auto px-4 py-6">
+            <main className="container mx-auto px-2 lg:px-4 max-w-[1600px] py-6">
+                {/* 遮罩层 */}
+                {isSidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* 左侧边栏 - 在小屏幕上隐藏 */}
-                    <div className="hidden lg:block lg:col-span-3 space-y-6">
-                        <div className="bg-white rounded-lg shadow">
-                            <Stats notes={notes} />
-                        </div>
+                    {/* 左侧边栏 - 在小屏幕上使用固定定位 */}
+                    <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 lg:relative lg:transform-none lg:col-span-3 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="h-full overflow-y-auto">
+                            <div className="bg-white rounded-lg shadow">
+                                <Stats notes={notes} />
+                            </div>
 
-                        <div className="bg-white rounded-lg shadow p-4">
-                            <Heatmap notes={notes} />
-                        </div>
+                            <div className="bg-white rounded-lg shadow p-4 mt-4">
+                                <Heatmap notes={notes} />
+                            </div>
 
-                        <div className="bg-white rounded-lg shadow">
-                            <TagCloud
-                                notes={notes}
-                                selectedTag={selectedTag}
-                                onSelectTag={handleSelectTag}
-                            />
+                            <div className="bg-white rounded-lg shadow mt-4">
+                                <TagCloud
+                                    notes={notes}
+                                    selectedTag={selectedTag}
+                                    onSelectTag={handleSelectTag}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -192,6 +215,7 @@ function App() {
                         <NotesHeader
                             onSearch={handleSearch}
                             onSort={handleSort}
+                            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                         />
 
                         {selectedTag && (
@@ -209,7 +233,7 @@ function App() {
                             </div>
                         )}
 
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {filteredAndSortedNotes.length > 0 ? (
                                 filteredAndSortedNotes.map(note => (
                                     <NoteCard
@@ -236,7 +260,7 @@ function App() {
             </main>
 
             <footer className="bg-white border-t border-gray-200 mt-10">
-                <div className="container mx-auto px-4 py-6">
+                <div className="container mx-auto px-2 lg:px-4 max-w-[1600px] py-6">
                     <div className="text-center text-sm text-gray-500">
                         <p>MyFlomo - 一个简单的笔记应用</p>
                         <p className="mt-1">灵感来源于 flomo.app</p>
