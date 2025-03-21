@@ -1,6 +1,16 @@
-# MyFlomo Client
+# MyFlomo
 
-一个基于 React + TypeScript 开发的 仿Flomo 纯网页客户端软件，提供简洁优雅的笔记记录体验。
+<div align="center">
+  <div style="display: inline-flex; align-items: center; gap: 8px; background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="width: 32px; height: 32px; background: #3ab682; color: white; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; font-size: 18px;">M</div>
+    <div>
+      <div style="font-size: 20px; font-weight: bold; color: #1a1a1a;">MyFlomo</div>
+      <div style="font-size: 12px; color: #666;">思想的数字花园</div>
+    </div>
+  </div>
+</div>
+
+一个基于 React + TypeScript 开发的仿 Flomo 纯网页客户端软件，提供简洁优雅的笔记记录体验。灵感来源于 flomo.app，但完全在浏览器端运行，无需服务器，支持离线使用。
 
 ## 功能特点
 
@@ -92,7 +102,6 @@ yarn build
 ├── public/             # 静态资源目录
 ├── src/               # 源代码目录
 │   ├── assets/        # 资源文件（图片等）
-│   ├── components/    # 组件目录
 │   │   ├── Heatmap.tsx    # 热力图组件
 │   │   ├── NoteInput.tsx  # 笔记输入组件
 │   │   ├── NoteCard.tsx   # 笔记卡片组件

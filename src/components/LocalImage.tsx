@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface LocalImageProps {
     imageId: string;
@@ -6,48 +6,47 @@ interface LocalImageProps {
     className?: string;
 }
 
-const STORAGE_KEY = 'flomo_images';
+const STORAGE_KEY = 'myflomo-images';
 
-export const LocalImage: React.FC<LocalImageProps> = ({ imageId, alt = '图片', className = '' }) => {
-    const [imageData, setImageData] = React.useState<string | null>(null);
-    const [error, setError] = React.useState(false);
+const LocalImage: React.FC<LocalImageProps> = ({ imageId, alt = '', className = '' }) => {
+    const [imageData, setImageData] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    React.useEffect(() => {
-        try {
-            const images = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            const image = images.find((img: { id: string; data: string }) => img.id === imageId);
-            if (image) {
-                setImageData(image.data);
-            } else {
-                setError(true);
+    useEffect(() => {
+        const loadImage = () => {
+            try {
+                const images = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                const image = images[imageId];
+
+                if (image) {
+                    setImageData(image);
+                } else {
+                    setError('图片未找到');
+                }
+            } catch (err) {
+                setError('加载图片失败');
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            console.error('Error loading image:', err);
-            setError(true);
-        }
+        };
+
+        loadImage();
     }, [imageId]);
 
-    if (error) {
-        return (
-            <div className={`bg-gray-100 rounded flex items-center justify-center ${className}`}>
-                <span className="text-gray-400 text-sm">图片加载失败</span>
-            </div>
-        );
+    if (isLoading) {
+        return <div className="text-sm text-gray-500">加载中...</div>;
     }
 
-    if (!imageData) {
-        return (
-            <div className={`bg-gray-50 rounded flex items-center justify-center ${className}`}>
-                <span className="text-gray-400 text-sm">加载中...</span>
-            </div>
-        );
+    if (error) {
+        return <div className="text-sm text-red-500">{error}</div>;
     }
 
     return (
         <img
-            src={imageData}
+            src={imageData || ''}
             alt={alt}
-            className={`rounded ${className}`}
+            className={`max-w-full h-auto ${className}`}
             loading="lazy"
         />
     );

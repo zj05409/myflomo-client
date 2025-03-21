@@ -13,27 +13,26 @@ interface Position {
 
 // 常量定义
 const EMOJIS = ['😊', '😂', '🤔', '👍', '❤️', '🎉', '🌟', '😴', '😎', '🤗', '😅', '😍', '🤩', '😋', '😇'];
-const STORAGE_KEY = {
-    TAGS: 'flomo_tags',
-    IMAGES: 'flomo_images'
+const STORAGE_KEYS = {
+    TAGS: 'myflomo-tags',
+    IMAGES: 'myflomo-images'
 };
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const TAG_REGEX = /#([^\s#]+)/g;
 
 // 工具函数
 const getTagsFromStorage = (): string[] => {
     try {
-        const tags = localStorage.getItem(STORAGE_KEY.TAGS);
+        const tags = localStorage.getItem(STORAGE_KEYS.TAGS);
         return tags ? JSON.parse(tags) : [];
     } catch (error) {
-        console.error('Error reading tags from localStorage:', error);
+        console.error('Error loading tags from localStorage:', error);
         return [];
     }
 };
 
 const saveTagsToStorage = (tags: string[]) => {
     try {
-        localStorage.setItem(STORAGE_KEY.TAGS, JSON.stringify(Array.from(new Set(tags))));
+        localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(Array.from(new Set(tags))));
     } catch (error) {
         console.error('Error saving tags to localStorage:', error);
     }
@@ -44,7 +43,7 @@ const extractTags = (content: string): string[] => {
     return matches ? matches.map(tag => tag.slice(1)) : [];
 };
 
-// 图片处理函数
+// 压缩图片
 const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -55,15 +54,14 @@ const compressImage = (file: File): Promise<string> => {
                 let width = img.width;
                 let height = img.height;
 
-                // 如果图片大于 1200px，按比例缩小
-                const maxSize = 1200;
-                if (width > maxSize || height > maxSize) {
+                // 如果图片尺寸超过 1200px，按比例缩小
+                if (width > 1200 || height > 1200) {
                     if (width > height) {
-                        height = Math.round((height * maxSize) / width);
-                        width = maxSize;
+                        height = Math.round((height * 1200) / width);
+                        width = 1200;
                     } else {
-                        width = Math.round((width * maxSize) / height);
-                        height = maxSize;
+                        width = Math.round((width * 1200) / height);
+                        height = 1200;
                     }
                 }
 
@@ -71,34 +69,42 @@ const compressImage = (file: File): Promise<string> => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) {
-                    reject(new Error('Failed to get canvas context'));
+                    reject(new Error('无法创建 canvas 上下文'));
                     return;
                 }
-
                 ctx.drawImage(img, 0, 0, width, height);
-                const quality = 0.7; // 压缩质量
-                const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                resolve(dataUrl);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
             };
-            img.onerror = () => reject(new Error('Failed to load image'));
+            img.onerror = reject;
             img.src = e.target?.result as string;
         };
-        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 };
 
 const saveImageToStorage = (imageData: string) => {
     try {
-        const images = JSON.parse(localStorage.getItem(STORAGE_KEY.IMAGES) || '[]');
+        const images = JSON.parse(localStorage.getItem(STORAGE_KEYS.IMAGES) || '{}');
         const imageId = Date.now().toString();
-        images.push({ id: imageId, data: imageData });
-        localStorage.setItem(STORAGE_KEY.IMAGES, JSON.stringify(images));
+        images[imageId] = imageData;
+        localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(images));
         return imageId;
     } catch (error) {
         console.error('Error saving image to localStorage:', error);
         return null;
     }
+};
+
+// 获取所有标签
+const getAllTags = () => {
+    const storedTags = localStorage.getItem(STORAGE_KEYS.TAGS);
+    return storedTags ? JSON.parse(storedTags) : [];
+};
+
+// 保存标签
+const saveTags = (tags: string[]) => {
+    localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags));
 };
 
 export default function NoteInput({ onSubmit }: NoteInputProps) {
@@ -280,34 +286,42 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
 
     // 处理图片文件
     const handleImageFile = async (file: File) => {
-        if (file.size > MAX_IMAGE_SIZE) {
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
             alert('图片大小不能超过 5MB');
             return;
         }
 
         try {
-            const compressedImage = await compressImage(file);
-            const imageId = saveImageToStorage(compressedImage);
+            const compressedData = await compressImage(file);
+            const imageId = Date.now().toString();
 
-            if (!imageId) {
-                throw new Error('Failed to save image');
-            }
+            // 保存图片到 LocalStorage
+            const images = JSON.parse(localStorage.getItem(STORAGE_KEYS.IMAGES) || '{}');
+            images[imageId] = compressedData;
+            localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(images));
 
+            // 插入图片标记
+            const imageMarkdown = `![图片](${imageId})`;
             const textarea = textareaRef.current;
             if (textarea) {
                 const start = textarea.selectionStart;
-                const imageMarkdown = `![图片](local-image://${imageId})`;
-                const newContent = content.substring(0, start) + imageMarkdown + content.substring(start);
+                const end = textarea.selectionEnd;
+                const newContent = content.slice(0, start) + imageMarkdown + content.slice(end);
                 setContent(newContent);
-
-                // 更新光标位置
+                // 将光标移动到图片标记后
+                const newPosition = start + imageMarkdown.length;
                 setTimeout(() => {
-                    textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length;
                     textarea.focus();
+                    textarea.setSelectionRange(newPosition, newPosition);
                 }, 0);
             }
         } catch (error) {
-            console.error('图片处理失败:', error);
+            console.error('Error handling image:', error);
             alert('图片处理失败，请重试');
         }
     };

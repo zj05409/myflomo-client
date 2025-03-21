@@ -87,7 +87,7 @@ export function saveNotesToLocalStorage(notes: Note[]): void {
             updatedAt: note.updatedAt.toISOString()
         }));
         const serializedNotes = JSON.stringify(notesToSave);
-        localStorage.setItem('flomo_notes', serializedNotes);
+        localStorage.setItem('myflomo-notes', serializedNotes);
     } catch (error) {
         console.error('保存笔记到本地存储失败', error);
     }
@@ -99,7 +99,7 @@ export function saveNotesToLocalStorage(notes: Note[]): void {
  */
 export function loadNotesFromLocalStorage(): Note[] {
     try {
-        const serializedNotes = localStorage.getItem('flomo_notes');
+        const serializedNotes = localStorage.getItem('myflomo-notes');
         if (!serializedNotes) return [];
 
         // 解析 JSON 并将日期字符串转回日期对象
