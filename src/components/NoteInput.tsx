@@ -83,30 +83,6 @@ const compressImage = (file: File): Promise<string> => {
     });
 };
 
-const saveImageToStorage = (imageData: string) => {
-    try {
-        const images = JSON.parse(localStorage.getItem(STORAGE_KEYS.IMAGES) || '{}');
-        const imageId = Date.now().toString();
-        images[imageId] = imageData;
-        localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(images));
-        return imageId;
-    } catch (error) {
-        console.error('Error saving image to localStorage:', error);
-        return null;
-    }
-};
-
-// 获取所有标签
-const getAllTags = () => {
-    const storedTags = localStorage.getItem(STORAGE_KEYS.TAGS);
-    return storedTags ? JSON.parse(storedTags) : [];
-};
-
-// 保存标签
-const saveTags = (tags: string[]) => {
-    localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags));
-};
-
 export default function NoteInput({ onSubmit }: NoteInputProps) {
     // 状态管理
     const [content, setContent] = useState('');

@@ -21,7 +21,7 @@ export function extractTags(content: string): string[] {
  * @returns 新的笔记对象
  */
 export function createNote(content: string): Note {
-    const now = new Date();
+    const now = Date.now();
     const tags = extractTags(content);
 
     return {
@@ -40,13 +40,11 @@ export function createNote(content: string): Note {
  * @returns 更新后的笔记
  */
 export function updateNote(note: Note, content: string): Note {
-    const tags = extractTags(content);
-
     return {
         ...note,
         content,
-        tags,
-        updatedAt: new Date()
+        tags: extractTags(content),
+        updatedAt: Date.now()
     };
 }
 
@@ -80,16 +78,9 @@ export function sortNotesByDate(notes: Note[], ascending = false): Note[] {
  */
 export function saveNotesToLocalStorage(notes: Note[]): void {
     try {
-        // 处理日期对象，将其转为 ISO 字符串
-        const notesToSave = notes.map(note => ({
-            ...note,
-            createdAt: note.createdAt.toISOString(),
-            updatedAt: note.updatedAt.toISOString()
-        }));
-        const serializedNotes = JSON.stringify(notesToSave);
-        localStorage.setItem('myflomo-notes', serializedNotes);
+        localStorage.setItem('myflomo-notes', JSON.stringify(notes));
     } catch (error) {
-        console.error('保存笔记到本地存储失败', error);
+        console.error('Failed to save notes to localStorage:', error);
     }
 }
 
@@ -99,20 +90,19 @@ export function saveNotesToLocalStorage(notes: Note[]): void {
  */
 export function loadNotesFromLocalStorage(): Note[] {
     try {
-        const serializedNotes = localStorage.getItem('myflomo-notes');
-        if (!serializedNotes) return [];
+        const notesJson = localStorage.getItem('myflomo-notes');
+        if (!notesJson) return [];
 
-        // 解析 JSON 并将日期字符串转回日期对象
-        const notes = JSON.parse(serializedNotes) as Note[];
+        const notes = JSON.parse(notesJson);
 
-        // 修复日期对象
-        return notes.map(note => ({
+        // 确保日期是数字类型
+        return notes.map((note: Partial<Note>) => ({
             ...note,
-            createdAt: new Date(note.createdAt),
-            updatedAt: new Date(note.updatedAt)
+            createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt).getTime() : note.createdAt,
+            updatedAt: typeof note.updatedAt === 'string' ? new Date(note.updatedAt).getTime() : note.updatedAt
         }));
     } catch (error) {
-        console.error('从本地存储加载笔记失败', error);
+        console.error('Failed to load notes from localStorage:', error);
         return [];
     }
 }

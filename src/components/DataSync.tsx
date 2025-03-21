@@ -1,25 +1,20 @@
 import React, { useState } from 'react';
 import { DownloadIcon, UploadIcon } from './icons';
+import { Note } from '../types/note';
 
-const STORAGE_KEYS = {
-    NOTES: 'myflomo-notes',
-    TAGS: 'myflomo-tags',
-    IMAGES: 'myflomo-images'
-};
+interface DataSyncProps {
+    onExport: () => { notes: Note[]; images: Record<string, string> };
+    onImport: (data: { notes: Note[]; images: Record<string, string> }) => void;
+}
 
-export default function DataSync() {
+export default function DataSync({ onExport, onImport }: DataSyncProps) {
     const [isImporting, setIsImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // 导出所有数据
     const handleExport = () => {
         try {
-            const exportData = {
-                notes: JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]'),
-                tags: JSON.parse(localStorage.getItem(STORAGE_KEYS.TAGS) || '[]'),
-                images: JSON.parse(localStorage.getItem(STORAGE_KEYS.IMAGES) || '{}')
-            };
-
+            const exportData = onExport();
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -48,32 +43,12 @@ export default function DataSync() {
             const importData = JSON.parse(text);
 
             // 验证导入数据的格式
-            if (!importData.notes || !importData.tags || !importData.images) {
+            if (!importData.notes || !importData.images) {
                 throw new Error('无效的备份文件格式');
             }
 
-            // 备份当前数据
-            const backupData = {
-                notes: localStorage.getItem(STORAGE_KEYS.NOTES),
-                tags: localStorage.getItem(STORAGE_KEYS.TAGS),
-                images: localStorage.getItem(STORAGE_KEYS.IMAGES)
-            };
-
-            try {
-                // 导入新数据
-                localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(importData.notes));
-                localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(importData.tags));
-                localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(importData.images));
-
-                // 刷新页面以应用新数据
-                window.location.reload();
-            } catch (error) {
-                // 如果导入失败，恢复备份
-                localStorage.setItem(STORAGE_KEYS.NOTES, backupData.notes || '[]');
-                localStorage.setItem(STORAGE_KEYS.TAGS, backupData.tags || '[]');
-                localStorage.setItem(STORAGE_KEYS.IMAGES, backupData.images || '{}');
-                throw error;
-            }
+            // 使用传入的 onImport 处理导入
+            onImport(importData);
         } catch (error) {
             console.error('导入失败:', error);
             setError('导入失败，请确保文件格式正确');

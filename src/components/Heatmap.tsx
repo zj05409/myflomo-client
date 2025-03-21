@@ -32,8 +32,8 @@ export default function Heatmap({ notes }: HeatmapProps) {
                     mockNotes.push({
                         id: `mock-${currentDate.getTime()}-${i}`,
                         content: '模拟笔记',
-                        createdAt: currentDate,
-                        updatedAt: currentDate,
+                        createdAt: currentDate.getTime(),
+                        updatedAt: currentDate.getTime(),
                         tags: []
                     });
                 }
