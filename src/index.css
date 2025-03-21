@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-rgb: 58, 182, 130;
+  --primary-color: rgb(var(--primary-rgb));
+  --primary-light: rgba(var(--primary-rgb), 0.1);
+  --secondary-rgb: 99, 102, 241;
+  --background-rgb: 249, 250, 251;
+  --foreground-rgb: 51, 51, 51;
+  --border-color: #e5e7eb;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#3ab682] text-white;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow;
+  }
+
+  .input-primary {
+    @apply border border-[#e5e7eb] rounded-md focus:outline-none focus:ring-1 focus:ring-[#3ab682] focus:border-[#3ab682];
+  }
+
+  .stats-block {
+    @apply flex flex-col items-center justify-center p-4;
+  }
+
+  .stats-number {
+    @apply text-xl font-medium text-gray-800;
+  }
+
+  .stats-label {
+    @apply text-xs text-gray-500 mt-1;
+  }
+
+  .note-card {
+    @apply rounded-lg border border-[#e5e7eb] shadow-sm hover:shadow-md bg-white transition-all duration-200 p-4 relative;
+  }
+
+  .tag-item {
+    @apply inline-flex items-center px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600;
+  }
+
+  /* 热力图样式 */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 14px);
+    grid-template-rows: repeat(7, 14px);
+    gap: 3px;
+  }
+
+  .heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .heatmap-cell:hover {
+    transform: scale(1.2);
+  }
+
+  /* 今天的单元格样式 */
+  .today-cell {
+    border: 1px solid #000;
+  }
+
+  /* 热力图颜色 */
+  .cell-0 {
+    @apply bg-[#f1f1f1];
+  }
+
+  .cell-1 {
+    @apply bg-[#e5f3ef];
+  }
+
+  .cell-2 {
+    @apply bg-[#c1e3d7];
+  }
+
+  .cell-3 {
+    @apply bg-[#8fcdb7];
+  }
+
+  .cell-4 {
+    @apply bg-[#3ab682];
+  }
+
+  /* 热力图样式，类似Flomo日历 */
+  .heat-map-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-gap: 2px;
+  }
+
+  .heat-map-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background-color: #f0f0f0;
+  }
+
+  .heat-map-cell-empty {
+    background-color: #f0f0f0;
+  }
+
+  .heat-map-cell-1 {
+    background-color: #daf2e6;
+  }
+
+  .heat-map-cell-2 {
+    background-color: #b6e6cf;
+  }
+
+  .heat-map-cell-3 {
+    background-color: #6ccca6;
+  }
+
+  .heat-map-cell-4 {
+    background-color: #3ab682;
+  }
+}
+
+/* 添加平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 添加自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--background-rgb));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--primary-rgb), 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--primary-rgb), 0.5);
+}
