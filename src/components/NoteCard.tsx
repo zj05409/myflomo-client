@@ -348,25 +348,37 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
                     <ClockIcon className="w-4 h-4 mr-1" />
                     {formatDate(note.createdAt)}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="relative group h-8">
                     {!isEditing && (
                         <>
                             <button
-                                onClick={handleEdit}
-                                className="p-1.5 hover:text-gray-600 transition-colors"
-                                title="编辑"
+                                className="absolute right-0 top-0 p-1.5 text-gray-400 hover:text-gray-600 transition-colors group-hover:hidden h-8 w-8 flex items-center justify-center"
+                                title="更多操作"
                             >
-                                <EditIcon />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="1" />
+                                    <circle cx="12" cy="5" r="1" />
+                                    <circle cx="12" cy="19" r="1" />
+                                </svg>
                             </button>
-                            {onDelete && (
+                            <div className="absolute right-0 top-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                 <button
-                                    onClick={() => onDelete(note.id)}
-                                    className="p-1.5 hover:text-red-500 transition-colors"
-                                    title="删除"
+                                    onClick={handleEdit}
+                                    className="p-1.5 hover:text-gray-600 transition-colors h-8 w-8 flex items-center justify-center"
+                                    title="编辑"
                                 >
-                                    <DeleteIcon />
+                                    <EditIcon />
                                 </button>
-                            )}
+                                {onDelete && (
+                                    <button
+                                        onClick={() => onDelete(note.id)}
+                                        className="p-1.5 hover:text-red-500 transition-colors h-8 w-8 flex items-center justify-center"
+                                        title="删除"
+                                    >
+                                        <DeleteIcon />
+                                    </button>
+                                )}
+                            </div>
                         </>
                     )}
                 </div>
