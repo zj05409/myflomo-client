@@ -1,7 +1,9 @@
+import React from 'react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Note } from '../types/note';
 import { ClockIcon, EditIcon, DeleteIcon, SaveIcon, CancelIcon, TagIcon } from './icons';
+import LocalImage from './LocalImage';
 
 interface NoteCardProps {
     note: Note;
@@ -9,12 +11,32 @@ interface NoteCardProps {
     onEdit?: (id: string, content: string) => void;
 }
 
-export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(note.content);
 
-    // 处理笔记内容，移除标签
-    const displayContent = note.content.replace(/#[^\s#]+/g, '').trim();
+    // 将 Markdown 格式的内容转换为 React 元素
+    const renderContent = () => {
+        const parts = note.content.split(/(!?\[.*?\]\(.*?\))/);
+        return parts.map((part, index) => {
+            // 检查是否是图片标记
+            const imageMatch = part.match(/!\[(.*?)\]\((local-image:\/\/(.*?)\))/);
+            if (imageMatch) {
+                const [, alt, , imageId] = imageMatch;
+                return (
+                    <div key={index} className="my-2">
+                        <LocalImage
+                            imageId={imageId}
+                            alt={alt}
+                            className="max-w-full h-auto"
+                        />
+                    </div>
+                );
+            }
+            // 处理普通文本，移除标签
+            return <span key={index}>{part.replace(/#[^\s#]+/g, '').trim()}</span>;
+        });
+    };
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -93,7 +115,9 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
                         placeholder="编辑笔记..."
                     />
                 ) : (
-                    <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{displayContent}</p>
+                    <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                        {renderContent()}
+                    </div>
                 )}
             </div>
 
@@ -113,4 +137,6 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
             )}
         </div>
     );
-} 
+};
+
+export default NoteCard; 

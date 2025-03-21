@@ -13,14 +13,17 @@ interface Position {
 
 // 常量定义
 const EMOJIS = ['😊', '😂', '🤔', '👍', '❤️', '🎉', '🌟', '😴', '😎', '🤗', '😅', '😍', '🤩', '😋', '😇'];
-const STORAGE_KEY = 'flomo_tags';
+const STORAGE_KEY = {
+    TAGS: 'flomo_tags',
+    IMAGES: 'flomo_images'
+};
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const TAG_REGEX = /#([^\s#]+)/g;
 
 // 工具函数
 const getTagsFromStorage = (): string[] => {
     try {
-        const tags = localStorage.getItem(STORAGE_KEY);
+        const tags = localStorage.getItem(STORAGE_KEY.TAGS);
         return tags ? JSON.parse(tags) : [];
     } catch (error) {
         console.error('Error reading tags from localStorage:', error);
@@ -30,7 +33,7 @@ const getTagsFromStorage = (): string[] => {
 
 const saveTagsToStorage = (tags: string[]) => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(new Set(tags))));
+        localStorage.setItem(STORAGE_KEY.TAGS, JSON.stringify(Array.from(new Set(tags))));
     } catch (error) {
         console.error('Error saving tags to localStorage:', error);
     }
@@ -39,6 +42,63 @@ const saveTagsToStorage = (tags: string[]) => {
 const extractTags = (content: string): string[] => {
     const matches = content.match(TAG_REGEX);
     return matches ? matches.map(tag => tag.slice(1)) : [];
+};
+
+// 图片处理函数
+const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // 如果图片大于 1200px，按比例缩小
+                const maxSize = 1200;
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = Math.round((height * maxSize) / width);
+                        width = maxSize;
+                    } else {
+                        width = Math.round((width * maxSize) / height);
+                        height = maxSize;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Failed to get canvas context'));
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, width, height);
+                const quality = 0.7; // 压缩质量
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = e.target?.result as string;
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+};
+
+const saveImageToStorage = (imageData: string) => {
+    try {
+        const images = JSON.parse(localStorage.getItem(STORAGE_KEY.IMAGES) || '[]');
+        const imageId = Date.now().toString();
+        images.push({ id: imageId, data: imageData });
+        localStorage.setItem(STORAGE_KEY.IMAGES, JSON.stringify(images));
+        return imageId;
+    } catch (error) {
+        console.error('Error saving image to localStorage:', error);
+        return null;
+    }
 };
 
 export default function NoteInput({ onSubmit }: NoteInputProps) {
@@ -52,6 +112,9 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
     // Refs
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // 拖拽状态
+    const [isDragging, setIsDragging] = useState(false);
 
     // 标签建议处理
     const updateTagSuggestions = useCallback((searchText: string) => {
@@ -189,30 +252,71 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
         }
     }, [handleSubmit, isComposing]);
 
-    // 图片处理
-    const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // 处理拖拽事件
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }, []);
 
+    const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+        for (const file of imageFiles) {
+            await handleImageFile(file);
+        }
+    }, [content]);
+
+    // 处理图片文件
+    const handleImageFile = async (file: File) => {
         if (file.size > MAX_IMAGE_SIZE) {
             alert('图片大小不能超过 5MB');
             return;
         }
 
         try {
-            // TODO: 替换为实际的上传 API
-            const imageUrl = URL.createObjectURL(file);
+            const compressedImage = await compressImage(file);
+            const imageId = saveImageToStorage(compressedImage);
+
+            if (!imageId) {
+                throw new Error('Failed to save image');
+            }
+
             const textarea = textareaRef.current;
             if (textarea) {
                 const start = textarea.selectionStart;
-                const newContent = content.substring(0, start) +
-                    `![图片](${imageUrl})` +
-                    content.substring(start);
+                const imageMarkdown = `![图片](local-image://${imageId})`;
+                const newContent = content.substring(0, start) + imageMarkdown + content.substring(start);
                 setContent(newContent);
+
+                // 更新光标位置
+                setTimeout(() => {
+                    textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length;
+                    textarea.focus();
+                }, 0);
             }
         } catch (error) {
-            console.error('图片上传失败:', error);
-            alert('图片上传失败，请重试');
+            console.error('图片处理失败:', error);
+            alert('图片处理失败，请重试');
+        }
+    };
+
+    // 处理图片上传
+    const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            await handleImageFile(file);
         }
     }, [content]);
 
@@ -234,7 +338,17 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
 
     return (
         <div className="card p-4 transition-all duration-200 rounded-xl border border-[#e5e7eb] focus-within:border-[#3ab682] focus-within:shadow-[0_0_0_1px_#3ab682]">
-            <div className="relative">
+            <div
+                className={`relative ${isDragging ? 'bg-gray-50' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                {isDragging && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-90 rounded-lg border-2 border-dashed border-gray-300 z-50">
+                        <p className="text-gray-500">拖放图片到这里</p>
+                    </div>
+                )}
                 <textarea
                     ref={textareaRef}
                     value={content}
