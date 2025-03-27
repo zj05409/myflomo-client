@@ -6,7 +6,7 @@
   <p>思想的数字花园</p>
 </div>
 
-MyFlomo 是一个基于 React + TypeScript 开发的仿 Flomo 客户端软件，提供简洁优雅的笔记记录体验。灵感来源于 flomo.app，支持 Web 端和桌面端（Windows、macOS），无需服务器，支持离线使用。
+MyFlomo 是一个基于 React + TypeScript 开发的仿 Flomo 客户端软件，提供简洁优雅的笔记记录体验。灵感来源于 flomo.app，支持 Web 端和桌面端（Windows、macOS），无需服务器，支持离线使用。所有数据均存储在本地，保护你的隐私。
 
 ## 功能特点
 
@@ -64,7 +64,7 @@ MyFlomo 是一个基于 React + TypeScript 开发的仿 Flomo 客户端软件，
 ### Web 版（本地运行）
 1. 克隆项目
 ```bash
-git clone https://github.com/yourusername/myflomo-client.git
+git clone https://github.com/zj05409/myflomo-client.git
 cd myflomo-client
 ```
 
@@ -82,32 +82,10 @@ npm run dev
 
 ### 桌面版（本地运行）
 
-#### macOS
+#### macOS 和 Windows
 1. 克隆项目
 ```bash
-git clone https://github.com/yourusername/myflomo-client.git
-cd myflomo-client
-```
-
-2. 安装依赖
-```bash
-npm install
-```
-
-3. 启动开发服务器
-```bash
-npm run dev
-```
-
-4. 在另一个终端中启动 Electron 应用
-```bash
-npm run electron:dev
-```
-
-#### Windows
-1. 克隆项目
-```bash
-git clone https://github.com/yourusername/myflomo-client.git
+git clone https://github.com/zj05409/myflomo-client.git
 cd myflomo-client
 ```
 
@@ -176,12 +154,12 @@ myflomo-client/
 
 ## 技术栈
 
-- Electron
-- React
-- TypeScript
-- Vite
-- TailwindCSS
-- date-fns
+- Electron - 跨平台桌面应用开发框架
+- React - 用户界面库
+- TypeScript - 类型安全的 JavaScript 超集
+- Vite - 现代前端构建工具
+- TailwindCSS - 实用优先的 CSS 框架
+- date-fns - 日期处理库
 
 ## 开发指南
 
@@ -209,3 +187,8 @@ myflomo-client/
 ## 许可证
 
 MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 联系方式
+
+- 项目维护者：zj05409
+- 项目链接：[https://github.com/zj05409/myflomo-client](https://github.com/zj05409/myflomo-client)

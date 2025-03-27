@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "cross-env NODE_ENV=development electron .",
-    "electron:build": "vite build && electron-builder",
+    "electron:build": "vite build && electron-builder -mwl",
     "electron:preview": "cross-env NODE_ENV=production electron ."
   },
   "dependencies": {
