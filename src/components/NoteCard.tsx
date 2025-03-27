@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ClockIcon, EditIcon, DeleteIcon, CancelIcon, SendIcon } from './icons';
+import { ClockIcon, EditIcon, DeleteIcon, CancelIcon, SendIcon, CopyIcon } from './icons';
 import LocalImage from './LocalImage';
 import { formatDate } from '../utils/date';
+import { countCharacters } from '../utils/text';
 
 interface NoteCardProps {
     note: {
@@ -93,6 +94,8 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
     const [showTagSuggestions, setShowTagSuggestions] = useState(false);
     const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [showCopySuccess, setShowCopySuccess] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,10 +117,26 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
         setShowTagSuggestions(suggestions.length > 0);
     }, []);
 
-    // 内容变化处理
+    // 添加自动调整高度的函数
+    const adjustTextareaHeight = useCallback(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        // 重置高度
+        textarea.style.height = 'auto';
+        // 设置新高度
+        textarea.style.height = `${Math.max(80, textarea.scrollHeight)}px`;
+    }, []);
+
+    // 修改内容变化处理函数
     const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newContent = e.target.value;
         setEditContent(newContent);
+
+        // 使用 setTimeout 确保在 DOM 更新后再调整高度
+        setTimeout(() => {
+            adjustTextareaHeight();
+        }, 0);
 
         const cursorPos = e.target.selectionStart;
         const textBeforeCursor = newContent.substring(0, cursorPos);
@@ -130,7 +149,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
         }
 
         setShowTagSuggestions(false);
-    }, [updateTagSuggestions]);
+    }, [adjustTextareaHeight, updateTagSuggestions]);
 
     // 标签操作
     const insertTag = useCallback(() => {
@@ -313,6 +332,15 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
 
     const handleEdit = () => {
         setIsEditing(true);
+        // 使用 setTimeout 确保在 DOM 更新后再调整高度和设置光标位置
+        setTimeout(() => {
+            adjustTextareaHeight();
+            const textarea = textareaRef.current;
+            if (textarea) {
+                textarea.focus();
+                textarea.setSelectionRange(editContent.length, editContent.length);
+            }
+        }, 0);
     };
 
     const handleCancel = () => {
@@ -335,52 +363,72 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
     };
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+        if (e.key === 'Enter' && e.shiftKey && !isComposing) {
             e.preventDefault();
             handleSave();
         }
     }, [isComposing, handleSave]);
 
+    // 复制笔记内容
+    const handleCopy = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(note.content);
+            setShowCopySuccess(true);
+            setTimeout(() => setShowCopySuccess(false), 2000);
+        } catch (error) {
+            console.error('复制失败:', error);
+        }
+    }, [note.content]);
+
+    // 添加双击处理函数
+    const handleDoubleClick = useCallback(() => {
+        if (!isEditing) {
+            handleEdit();
+        }
+    }, [isEditing, handleEdit]);
+
+    // 添加失焦处理函数
+    const handleBlur = useCallback(() => {
+        if (isEditing) {
+            handleSave();
+        }
+    }, [isEditing, handleSave]);
+
     return (
         <div className="card p-4 transition-all duration-200 rounded-xl border border-[#e5e7eb] hover:border-[#3ab682] hover:shadow-[0_0_0_1px_#3ab682]">
-            <div className="flex items-start justify-between mb-2">
+            <div
+                className="flex justify-between items-start mb-2 cursor-text"
+                onDoubleClick={handleDoubleClick}
+            >
                 <div className="flex items-center text-sm text-gray-500 select-none">
                     <ClockIcon className="w-4 h-4 mr-1" />
                     {formatDate(note.createdAt)}
+                    <span className="ml-3 text-xs text-gray-400">
+                        {isEditing ? countCharacters(editContent) : countCharacters(note.content)} 字
+                    </span>
                 </div>
-                <div className="relative group h-8">
-                    {!isEditing && (
-                        <>
-                            <button
-                                className="absolute right-0 top-0 p-1.5 text-gray-400 hover:text-gray-600 transition-colors group-hover:hidden h-8 w-8 flex items-center justify-center"
-                                title="更多操作"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="1" />
-                                    <circle cx="12" cy="5" r="1" />
-                                    <circle cx="12" cy="19" r="1" />
-                                </svg>
-                            </button>
-                            <div className="absolute right-0 top-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <button
-                                    onClick={handleEdit}
-                                    className="p-1.5 hover:text-gray-600 transition-colors h-8 w-8 flex items-center justify-center"
-                                    title="编辑"
-                                >
-                                    <EditIcon />
-                                </button>
-                                {onDelete && (
-                                    <button
-                                        onClick={() => onDelete(note.id)}
-                                        className="p-1.5 hover:text-red-500 transition-colors h-8 w-8 flex items-center justify-center"
-                                        title="删除"
-                                    >
-                                        <DeleteIcon />
-                                    </button>
-                                )}
-                            </div>
-                        </>
-                    )}
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={handleCopy}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        title="复制内容"
+                    >
+                        <CopyIcon width={16} height={16} />
+                    </button>
+                    <button
+                        onClick={handleEdit}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        title="编辑"
+                    >
+                        <EditIcon width={16} height={16} />
+                    </button>
+                    <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        title="删除"
+                    >
+                        <DeleteIcon width={16} height={16} />
+                    </button>
                 </div>
             </div>
 
@@ -403,8 +451,9 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
                         onKeyDown={handleKeyDown}
                         onCompositionStart={() => setIsComposing(true)}
                         onCompositionEnd={() => setIsComposing(false)}
-                        className="w-full min-h-[80px] resize-none text-gray-700 placeholder-gray-400 bg-white border-0 focus:ring-0 outline-none p-0"
-                        rows={3}
+                        onBlur={handleBlur}
+                        className="w-full min-h-[80px] resize-none text-gray-700 placeholder-gray-400 bg-white border-0 focus:ring-0 outline-none p-0 overflow-hidden"
+                        rows={1}
                     />
 
                     {showTagSuggestions && (
@@ -429,7 +478,12 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onDelete, onEdit }) => {
                     )}
                 </div>
             ) : (
-                <div className="text-gray-700 whitespace-pre-wrap select-none">{renderContent(note.content)}</div>
+                <div
+                    className="text-gray-700 whitespace-pre-wrap cursor-text"
+                    onDoubleClick={handleDoubleClick}
+                >
+                    {renderContent(note.content)}
+                </div>
             )}
 
             {isEditing && (

@@ -1,6 +1,10 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
+
+// 抑制 IMK 相关的警告
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+process.env.ELECTRON_NO_ATTACH_CONSOLE = 'true';
 
 function createWindow() {
     const mainWindow = new BrowserWindow({

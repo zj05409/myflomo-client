@@ -1,5 +1,6 @@
-import { useState, KeyboardEvent, useRef, useCallback } from 'react';
+import { useState, KeyboardEvent, useRef, useCallback, DragEvent } from 'react';
 import { SendIcon } from './icons';
+import { countCharacters } from '../utils/text';
 
 // 类型定义
 interface NoteInputProps {
@@ -115,10 +116,22 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
         setShowTagSuggestions(suggestions.length > 0);
     }, []);
 
-    // 内容变化处理
+    // 添加自动调整高度的函数
+    const adjustTextareaHeight = useCallback(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        // 重置高度
+        textarea.style.height = 'auto';
+        // 设置新高度
+        textarea.style.height = `${Math.max(80, textarea.scrollHeight)}px`;
+    }, []);
+
+    // 修改内容变化处理函数
     const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newContent = e.target.value;
         setContent(newContent);
+        adjustTextareaHeight();
 
         const cursorPos = e.target.selectionStart;
         const textBeforeCursor = newContent.substring(0, cursorPos);
@@ -131,7 +144,7 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
         }
 
         setShowTagSuggestions(false);
-    }, [updateTagSuggestions]);
+    }, [updateTagSuggestions, adjustTextareaHeight]);
 
     // 标签操作
     const insertTag = useCallback(() => {
@@ -227,27 +240,27 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
         setShowTagSuggestions(false);
     }, [content, onSubmit]);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && e.shiftKey && !isComposing) {
             e.preventDefault();
             handleSubmit();
         }
-    }, [handleSubmit, isComposing]);
+    }, [isComposing, handleSubmit]);
 
     // 处理拖拽事件
-    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(true);
     }, []);
 
-    const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
     }, []);
 
-    const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
@@ -347,8 +360,8 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => setIsComposing(false)}
                     placeholder="现在的想法是..."
-                    className="w-full min-h-[80px] resize-none text-gray-700 placeholder-gray-400 bg-white border-0 focus:ring-0 outline-none p-0"
-                    rows={3}
+                    className="w-full min-h-[80px] resize-none text-gray-700 placeholder-gray-400 bg-white border-0 focus:ring-0 outline-none p-0 overflow-hidden"
+                    rows={1}
                 />
 
                 {showTagSuggestions && (
@@ -435,10 +448,14 @@ export default function NoteInput({ onSubmit }: NoteInputProps) {
                     )}
                 </div>
 
+                <span className="ml-auto text-xs text-gray-400">
+                    {countCharacters(content)} 字
+                </span>
+
                 <button
                     onClick={handleSubmit}
                     disabled={!content.trim()}
-                    className="ml-auto btn-primary p-1.5 rounded-full flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-primary p-1.5 rounded-full flex items-center justify-center w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="发送"
                 >
                     <SendIcon />
